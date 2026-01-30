@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* The "Forest Green" - Represents Crops & Growth */
+  --color-primary: #15803d;   
+  
+  /* The "Lime" - Represents Modern Tech/Freshness */
+  --color-accent: #d9f99d;    
+  
+  /* Dark text for readability */
+  --color-dark: #1a2e05;      
+  
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+}
+
+html, body, #root {
+  background-color: #ffffff; /* Clean White - Not Green */
+  color: var(--color-dark);
+  scroll-behavior: smooth;
+}
+
+/* A modern soft shadow for cards */
+.card-shadow {
+  box-shadow: 0 4px 20px rgba(21, 128, 61, 0.08);
+}
