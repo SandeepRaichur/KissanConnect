@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate
-import { Sprout, ShoppingBag, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Sprout, ShoppingBag, Eye, EyeOff } from 'lucide-react';
+import { apiUrl } from '../config/api';
 
 const Signup = () => {
-  const navigate = useNavigate(); // Hook to move to another page
+  const navigate = useNavigate();
   const [role, setRole] = useState('farmer');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Loading state
+  const [isLoading, setIsLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -43,10 +44,9 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validate()) {
-      setIsLoading(true); // Start loading
+      setIsLoading(true);
       try {
-        // 1. Send Data to Backend
-        const response = await fetch('http://localhost:5000/api/users/register', {
+        const response = await fetch(apiUrl('/api/users/register'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -59,19 +59,18 @@ const Signup = () => {
           }),
         });
 
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
 
-        // 2. Check if successful
         if (response.ok) {
           alert("Registration Successful! Please Login.");
-          navigate('/login'); // Send user to login page
+          navigate('/login');
         } else {
           alert(data.message || "Registration Failed");
         }
       } catch (error) {
-        alert("Server Error: Is the Backend running?");
+        alert("Unable to connect to the server. Please ensure the backend is running.");
       } finally {
-        setIsLoading(false); // Stop loading
+        setIsLoading(false);
       }
     }
   };

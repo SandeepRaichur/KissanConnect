@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Star, Truck, ShieldCheck, ShoppingCart, Minus, Plus, CheckCircle } from 'lucide-react';
+import { Star, Truck, ShieldCheck, ShoppingCart, Minus, Plus } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { apiUrl } from '../config/api';
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -10,16 +11,29 @@ const ProductDetails = () => {
   const [qty, setQty] = useState(1);
 
   // Get logged in user
-  const user = JSON.parse(localStorage.getItem('userInfo'));
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem('userInfo'));
+  } catch {
+    user = null;
+  }
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/products/${id}`);
-        const data = await res.json();
-        setProduct(data);
+        const res = await fetch(apiUrl(`/api/products/${id}`));
+        if (res.ok) {
+          const data = await res.json();
+          setProduct(data && data._id ? data : null);
+        } else {
+          setProduct(null);
+        }
+      } catch (error) {
+        console.error("Failed to load product:", error);
+        setProduct(null);
+      } finally {
         setLoading(false);
-      } catch (error) { setLoading(false); }
+      }
     };
     fetchProduct();
   }, [id]);
@@ -59,7 +73,7 @@ const ProductDetails = () => {
   if (loading) return <div className="pt-24 text-center">Loading Product...</div>;
   if (!product) return <div className="pt-24 text-center">Product Not Found</div>;
 
-  const isOwner = user && user.name.trim().toLowerCase() === product.farmer.trim().toLowerCase();
+  const isOwner = Boolean(user?.name && product?.farmer && user.name.trim().toLowerCase() === product.farmer.trim().toLowerCase());
 
   return (
     <div className="pt-24 pb-20 px-6 min-h-screen bg-[#f8fafc]">

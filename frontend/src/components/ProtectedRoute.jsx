@@ -3,8 +3,13 @@ import { Navigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   // 1. Get user from local storage
-  const userLogin = localStorage.getItem('userInfo');
-  const user = userLogin ? JSON.parse(userLogin) : null;
+  let user = null;
+  try {
+    const userLogin = localStorage.getItem('userInfo');
+    user = userLogin ? JSON.parse(userLogin) : null;
+  } catch {
+    user = null;
+  }
 
   // 2. If no user is logged in, kick them to Login page
   if (!user) {

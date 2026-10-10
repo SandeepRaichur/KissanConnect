@@ -47,6 +47,10 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res.status(400).json({ message: 'Please provide both email and password' });
+  }
+
   try {
     // 1. Check for user email
     const user = await User.findOne({ email });
@@ -67,15 +71,13 @@ const loginUser = async (req, res) => {
   }
 };
 
-// ... existing imports (User, bcrypt)
-
-// ... existing registerUser and loginUser functions ...
-
 // @desc    Update User Profile
 // @route   PUT /api/users/profile
 const updateUserProfile = async (req, res) => {
   try {
-    // 1. Find user by ID (sent from frontend body or query)
+    if (!req.body._id) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
     const user = await User.findById(req.body._id);
 
     if (user) {

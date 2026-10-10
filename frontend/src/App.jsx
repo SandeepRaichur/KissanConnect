@@ -5,7 +5,7 @@ import ScrollToTop from './ScrollToTop';
 // Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import ProtectedRoute from './components/ProtectedRoute'; // Ensure you created this file!
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Pages
 import Home from './pages/Home';
@@ -19,8 +19,6 @@ import ProductDetails from './pages/ProductDetails';
 import NotFound from './pages/NotFound';
 import Profile from './pages/Profile'; 
 import Cart from './pages/Cart';
-
-// === THESE WERE MISSING ===
 import FarmerDashboard from './pages/FarmerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 

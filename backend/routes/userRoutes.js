@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
-// IMPORT ALL FUNCTIONS HERE
 const { 
   registerUser, 
   loginUser, 
-  updateUserProfile, // <--- WAS MISSING
-  getAllUsers,       // <--- WAS MISSING
-  deleteUser         // <--- WAS MISSING
+  updateUserProfile,
+  getAllUsers,
+  deleteUser
 } = require('../controllers/userController');
 
 router.post('/register', registerUser);

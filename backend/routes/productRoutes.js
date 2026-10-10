@@ -1,11 +1,10 @@
 const express = require('express');
 const router = express.Router();
-// IMPORT ALL FUNCTIONS HERE
 const { 
   getProducts, 
   getProductById, 
   createProduct, 
-  deleteProduct // <--- THIS WAS MISSING
+  deleteProduct
 } = require('../controllers/productController');
 
 router.route('/').get(getProducts).post(createProduct);

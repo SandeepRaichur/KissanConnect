@@ -10,8 +10,12 @@ const Navbar = () => {
 
   // Check login status whenever the page changes
   useEffect(() => {
-    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-    setUser(userInfo);
+    try {
+      const stored = localStorage.getItem('userInfo');
+      setUser(stored ? JSON.parse(stored) : null);
+    } catch {
+      setUser(null);
+    }
   }, [location]);
 
   const handleLogout = () => {
@@ -74,7 +78,7 @@ const Navbar = () => {
             <div className="flex items-center gap-4">
               <div className="hidden md:flex flex-col items-end">
                 <Link to="/profile" className="text-sm font-bold text-[#1a2e05] hover:text-[#15803d] transition-colors">
-                  Hi, {user.name.split(' ')[0]}
+                  Hi, {user.name ? user.name.split(' ')[0] : 'User'}
                 </Link>
                 <span className="text-[10px] text-gray-500 uppercase">{user.role}</span>
               </div>
@@ -115,7 +119,7 @@ const Navbar = () => {
           {user ? (
             <>
               <Link to="/profile" onClick={() => setIsOpen(false)} className="font-bold text-[#15803d] p-2 bg-green-50 rounded-lg">
-                My Profile ({user.name})
+                My Profile ({user.name || 'User'})
               </Link>
               
               {/* LOGIC FIX MOBILE: Show Dashboard ONLY if Farmer or Admin */}

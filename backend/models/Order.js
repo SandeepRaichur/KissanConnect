@@ -8,7 +8,6 @@ const orderSchema = mongoose.Schema(
     buyer: { type: String, required: true },
     farmer: { type: String, required: true },
     status: { type: String, default: 'Pending' },
-    // === MAKE SURE THIS IS HERE ===
     paymentMethod: { type: String, required: true }, 
     isPaid: { type: Boolean, default: false },
   },

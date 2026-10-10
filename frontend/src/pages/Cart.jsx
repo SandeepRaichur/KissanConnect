@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Smartphone, CreditCard, Banknote, CheckCircle, X, Loader, ShoppingBag, ShieldCheck } from 'lucide-react';
+import { Trash2, Smartphone, CreditCard, Banknote, X, Loader, ShoppingBag, ShieldCheck } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import { apiUrl } from '../config/api';
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -15,8 +16,12 @@ const Cart = () => {
 
   // Load Cart
   useEffect(() => {
-    const items = JSON.parse(localStorage.getItem('cartItems')) || [];
-    setCartItems(items);
+    try {
+      const items = JSON.parse(localStorage.getItem('cartItems')) || [];
+      setCartItems(Array.isArray(items) ? items : []);
+    } catch {
+      setCartItems([]);
+    }
   }, []);
 
   const removeFromCart = (id) => {
@@ -26,11 +31,16 @@ const Cart = () => {
   };
 
   const calculateTotal = () => {
-    return cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+    return cartItems.reduce((acc, item) => acc + (Number(item.price) || 0) * (Number(item.qty) || 1), 0);
   };
 
   const handleCheckout = () => {
-    const user = JSON.parse(localStorage.getItem('userInfo'));
+    let user = null;
+    try {
+      user = JSON.parse(localStorage.getItem('userInfo'));
+    } catch {
+      user = null;
+    }
     if (!user) {
       alert("Please Login to Checkout");
       navigate('/login');
@@ -39,44 +49,51 @@ const Cart = () => {
     setShowPayment(true);
   };
 
-  // === FAKE PAYMENT LOGIC ===
+  // Payment Confirmation Logic
   const confirmPayment = async (e) => {
-    e.preventDefault(); // Stop form reload
+    e.preventDefault();
     setIsProcessing(true);
-    const user = JSON.parse(localStorage.getItem('userInfo'));
 
-    // Simulate Network Delay (2 seconds)
-    setTimeout(async () => {
-      try {
-        // Send orders to backend
-        for (const item of cartItems) {
-          await fetch('http://localhost:5000/api/orders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              product: item.name,
-              quantity: item.qty,
-              price: item.price * item.qty,
-              buyer: user.name,
-              farmer: item.farmer,
-              paymentMethod: paymentMethod // 'Card', 'UPI', or 'COD'
-            }),
-          });
+    let user = null;
+    try {
+      user = JSON.parse(localStorage.getItem('userInfo'));
+    } catch {
+      user = null;
+    }
+
+    try {
+      // Send orders to backend
+      for (const item of cartItems) {
+        const res = await fetch(apiUrl('/api/orders'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product: item.name,
+            quantity: item.qty,
+            price: (Number(item.price) || 0) * (Number(item.qty) || 1),
+            buyer: user?.name || 'Customer',
+            farmer: item.farmer,
+            paymentMethod: paymentMethod // 'Card', 'UPI', or 'COD'
+          }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || 'Failed to record order');
         }
-
-        // Success
-        localStorage.removeItem('cartItems');
-        setCartItems([]);
-        alert(`Payment Successful! Transaction ID: TXN${Math.floor(Math.random() * 10000000)}`);
-        setShowPayment(false);
-        navigate('/');
-        
-      } catch (error) {
-        alert("Transaction Failed. Server Error.");
-      } finally {
-        setIsProcessing(false);
       }
-    }, 2000);
+
+      // Success
+      localStorage.removeItem('cartItems');
+      setCartItems([]);
+      alert(`Payment Successful! Transaction ID: TXN${Math.floor(Math.random() * 10000000)}`);
+      setShowPayment(false);
+      navigate('/');
+    } catch (error) {
+      alert(error.message || "Transaction Failed. Please check if backend is running.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (cartItems.length === 0) {

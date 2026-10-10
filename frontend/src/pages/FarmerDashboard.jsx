@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Package, DollarSign, X, Save, Trash2, ChevronDown } from 'lucide-react';
+import { Plus, Package, DollarSign, X, Trash2, ChevronDown } from 'lucide-react';
+import { apiUrl } from '../config/api';
 
 const FarmerDashboard = () => {
   const [showForm, setShowForm] = useState(false);
@@ -7,7 +8,13 @@ const FarmerDashboard = () => {
   const [myCrops, setMyCrops] = useState([]);
   const [stats, setStats] = useState({ earnings: 0, orders: 0 });
 
-  const user = JSON.parse(localStorage.getItem('userInfo')) || { name: 'Farmer' };
+  let user = { name: 'Farmer' };
+  try {
+    const stored = JSON.parse(localStorage.getItem('userInfo'));
+    if (stored) user = stored;
+  } catch {
+    user = { name: 'Farmer' };
+  }
 
   const [formData, setFormData] = useState({
     name: '', 
@@ -20,28 +27,38 @@ const FarmerDashboard = () => {
   // 1. Fetch Data
   const fetchData = async () => {
     try {
-      const orderRes = await fetch(`http://localhost:5000/api/orders/myorders?farmer=${user.name}`);
-      const orderData = await orderRes.json();
-      setOrders(orderData);
-      
-      const totalEarnings = orderData.reduce((acc, order) => acc + order.price, 0);
-      setStats({ earnings: totalEarnings, orders: orderData.length });
+      const orderRes = await fetch(apiUrl(`/api/orders/myorders?farmer=${encodeURIComponent(user.name || '')}`));
+      if (orderRes.ok) {
+        const orderData = await orderRes.json();
+        if (Array.isArray(orderData)) {
+          setOrders(orderData);
+          const totalEarnings = orderData.reduce((acc, order) => acc + (Number(order.price) || 0), 0);
+          setStats({ earnings: totalEarnings, orders: orderData.length });
+        }
+      }
 
-      const productRes = await fetch('http://localhost:5000/api/products');
-      const productData = await productRes.json();
-      const myProducts = productData.filter(p => p.farmer === user.name);
-      setMyCrops(myProducts);
-
-    } catch (error) { console.error("Error fetching data"); }
+      const productRes = await fetch(apiUrl('/api/products'));
+      if (productRes.ok) {
+        const productData = await productRes.json();
+        if (Array.isArray(productData)) {
+          const myProducts = productData.filter(p => p.farmer === user.name);
+          setMyCrops(myProducts);
+        }
+      }
+    } catch (error) { 
+      console.error("Error fetching farmer dashboard data:", error); 
+    }
   };
 
-  useEffect(() => { fetchData(); }, [user.name]);
+  useEffect(() => { 
+    fetchData(); 
+  }, [user.name]);
 
   // 2. Handle Add Crop
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/products', {
+      const response = await fetch(apiUrl('/api/products'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, farmer: user.name, rating: 0 }),
@@ -50,42 +67,51 @@ const FarmerDashboard = () => {
         alert('Crop Added Successfully!');
         setShowForm(false);
         fetchData();
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        alert(errData.message || 'Failed to add crop');
       }
-    } catch (error) { alert('Server Error'); }
+    } catch (error) { 
+      alert('Unable to connect to the server'); 
+    }
   };
 
   // 3. Handle Delete Crop
   const handleDeleteCrop = async (id) => {
-    if(!window.confirm("Are you sure you want to delete this crop?")) return;
+    if (!window.confirm("Are you sure you want to delete this crop?")) return;
     try {
-        await fetch(`http://localhost:5000/api/products/${id}`, { method: 'DELETE' });
+      const res = await fetch(apiUrl(`/api/products/${id}`), { method: 'DELETE' });
+      if (res.ok) {
         fetchData();
-    } catch (error) { alert("Delete failed"); }
+      } else {
+        alert("Failed to delete crop");
+      }
+    } catch (error) { 
+      alert("Delete failed. Please check backend connection."); 
+    }
   };
 
-  // 4. Handle Update Status (FIXED FOR INSTANT UPDATE)
+  // 4. Handle Update Status (Optimistic Update)
   const handleStatusChange = async (id, newStatus) => {
-    // A. Optimistic Update: Update UI Immediately
     const updatedOrders = orders.map(order => 
-        order._id === id ? { ...order, status: newStatus } : order
+      order._id === id ? { ...order, status: newStatus } : order
     );
-    setOrders(updatedOrders); // Screen updates instantly
+    setOrders(updatedOrders);
 
-    // B. Send to Backend in Background
     try {
-        const res = await fetch(`http://localhost:5000/api/orders/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
-        });
-        
-        if(!res.ok) {
-            alert("Failed to save status on server");
-            fetchData(); // Revert if server failed
-        }
+      const res = await fetch(apiUrl(`/api/orders/${id}`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      
+      if (!res.ok) {
+        alert("Failed to save status on server");
+        fetchData();
+      }
     } catch (error) { 
-        alert("Update failed"); 
-        fetchData(); // Revert if error
+      alert("Status update failed"); 
+      fetchData();
     }
   };
 

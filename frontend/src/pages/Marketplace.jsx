@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Filter, ShoppingCart, Star, MapPin } from 'lucide-react';
+import { Search, ShoppingCart, Star, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { apiUrl } from '../config/api';
 
 const Marketplace = () => {
   const [products, setProducts] = useState([]);
@@ -11,22 +12,29 @@ const Marketplace = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/products');
-        const data = await res.json();
-        setProducts(data);
-        setLoading(false);
+        const res = await fetch(apiUrl('/api/products'));
+        if (res.ok) {
+          const data = await res.json();
+          setProducts(Array.isArray(data) ? data : []);
+        } else {
+          setProducts([]);
+        }
       } catch (error) {
+        console.error("Failed to fetch products:", error);
+        setProducts([]);
+      } finally {
         setLoading(false);
       }
     };
     fetchProducts();
   }, []);
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === "All" || product.category === categoryFilter;
+  const filteredProducts = Array.isArray(products) ? products.filter(product => {
+    const name = product?.name || '';
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === "All" || product?.category === categoryFilter;
     return matchesSearch && matchesCategory;
-  });
+  }) : [];
 
   return (
     <div className="pt-24 pb-20 px-6 min-h-screen bg-[#f8fafc]">

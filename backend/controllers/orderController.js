@@ -38,7 +38,7 @@ const getStats = async (req, res) => {
     const buyerCount = await User.countDocuments({ role: 'buyer' });
     const orderCount = await Order.countDocuments({});
     const orders = await Order.find({});
-    const totalVolume = orders.reduce((acc, item) => acc + item.price, 0);
+    const totalVolume = orders.reduce((acc, item) => acc + (Number(item.price) || 0), 0);
 
     res.json({ farmerCount, buyerCount, orderCount, totalVolume });
   } catch (error) {
@@ -46,7 +46,6 @@ const getStats = async (req, res) => {
   }
 };
 
-// === THIS WAS MISSING OR BROKEN ===
 // @desc    Update Order Status
 // @route   PUT /api/orders/:id
 const updateOrderStatus = async (req, res) => {

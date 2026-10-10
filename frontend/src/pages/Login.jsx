@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Leaf, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { apiUrl } from '../config/api';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -9,13 +10,10 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // === THIS IS THE MISSING FUNCTION ===
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    // Clear error when user starts typing
     if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: '' });
   };
-  // ====================================
 
   const validate = () => {
     let newErrors = {};
@@ -30,13 +28,13 @@ const Login = () => {
     if (validate()) {
       setIsLoading(true);
       try {
-        const response = await fetch('http://localhost:5000/api/users/login', {
+        const response = await fetch(apiUrl('/api/users/login'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         });
 
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
 
         if (response.ok) {
           localStorage.setItem('userInfo', JSON.stringify(data));
@@ -54,7 +52,7 @@ const Login = () => {
           alert(data.message || "Invalid Email or Password");
         }
       } catch (error) {
-        alert("Server Error: Is the Backend running?");
+        alert("Unable to connect to the server. Please ensure the backend is running.");
       } finally {
         setIsLoading(false);
       }

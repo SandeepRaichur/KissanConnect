@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ShieldAlert, Users, ShoppingBag, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
+import { apiUrl } from '../config/api';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({ farmerCount: 0, buyerCount: 0, orderCount: 0, totalVolume: 0 });
@@ -8,29 +9,50 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const statsRes = await fetch('http://localhost:5000/api/orders/stats');
-      setStats(await statsRes.json());
+      const statsRes = await fetch(apiUrl('/api/orders/stats'));
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData && typeof statsData === 'object' ? statsData : { farmerCount: 0, buyerCount: 0, orderCount: 0, totalVolume: 0 });
+      }
 
-      const usersRes = await fetch('http://localhost:5000/api/users');
-      setUsers(await usersRes.json());
+      const usersRes = await fetch(apiUrl('/api/users'));
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        setUsers(Array.isArray(usersData) ? usersData : []);
+      }
 
-      const productsRes = await fetch('http://localhost:5000/api/products');
-      setProducts(await productsRes.json());
-    } catch (error) { console.error("Error fetching admin data"); }
+      const productsRes = await fetch(apiUrl('/api/products'));
+      if (productsRes.ok) {
+        const productsData = await productsRes.json();
+        setProducts(Array.isArray(productsData) ? productsData : []);
+      }
+    } catch (error) { 
+      console.error("Error fetching admin data:", error); 
+    }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { 
+    fetchData(); 
+  }, []);
 
   const handleDeleteUser = async (id) => {
-    if(!window.confirm("Are you sure?")) return;
-    await fetch(`http://localhost:5000/api/users/${id}`, { method: 'DELETE' });
-    fetchData();
+    if (!window.confirm("Are you sure?")) return;
+    try {
+      await fetch(apiUrl(`/api/users/${id}`), { method: 'DELETE' });
+      fetchData();
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+    }
   };
 
   const handleDeleteProduct = async (id) => {
-    if(!window.confirm("Delete this product?")) return;
-    await fetch(`http://localhost:5000/api/products/${id}`, { method: 'DELETE' });
-    fetchData();
+    if (!window.confirm("Delete this product?")) return;
+    try {
+      await fetch(apiUrl(`/api/products/${id}`), { method: 'DELETE' });
+      fetchData();
+    } catch (error) {
+      console.error("Failed to delete product:", error);
+    }
   };
 
   return (
@@ -39,10 +61,10 @@ const AdminDashboard = () => {
         <div className="mb-8"><h1 className="text-3xl font-bold text-[#1a2e05]">Admin Panel</h1></div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-          <div className="bg-[#1a2e05] text-white p-6 rounded-2xl shadow-lg"><h3 className="text-3xl font-bold">{stats.farmerCount}</h3><p className="text-green-200 text-sm">Total Farmers</p></div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm"><h3 className="text-3xl font-bold text-[#1a2e05]">{stats.buyerCount}</h3><p className="text-gray-500 text-sm">Active Buyers</p></div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm"><h3 className="text-3xl font-bold text-[#15803d]">{stats.orderCount}</h3><p className="text-gray-500 text-sm">Total Orders</p></div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm"><h3 className="text-3xl font-bold text-orange-500">₹{stats.totalVolume.toLocaleString()}</h3><p className="text-gray-500 text-sm">Volume</p></div>
+          <div className="bg-[#1a2e05] text-white p-6 rounded-2xl shadow-lg"><h3 className="text-3xl font-bold">{stats?.farmerCount || 0}</h3><p className="text-green-200 text-sm">Total Farmers</p></div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm"><h3 className="text-3xl font-bold text-[#1a2e05]">{stats?.buyerCount || 0}</h3><p className="text-gray-500 text-sm">Active Buyers</p></div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm"><h3 className="text-3xl font-bold text-[#15803d]">{stats?.orderCount || 0}</h3><p className="text-gray-500 text-sm">Total Orders</p></div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm"><h3 className="text-3xl font-bold text-orange-500">₹{(stats?.totalVolume || 0).toLocaleString()}</h3><p className="text-gray-500 text-sm">Volume</p></div>
         </div>
 
         {/* USERS TABLE */}
