@@ -30,9 +30,11 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'KissanConnect API', timestamp: new Date().toISOString() });
 });
 
-// Serve frontend in production if built together
-if (process.env.NODE_ENV === 'production') {
-  const frontendDist = path.join(__dirname, '../frontend/dist');
+const fs = require('fs');
+
+// Serve frontend if built together (e.g., monolith build), otherwise serve API status
+const frontendDist = path.join(__dirname, '../frontend/dist');
+if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
 
   app.get('*', (req, res, next) => {
@@ -43,7 +45,7 @@ if (process.env.NODE_ENV === 'production') {
   });
 } else {
   app.get('/', (req, res) => {
-    res.send('API is running...');
+    res.json({ status: 'ok', service: 'KissanConnect API' });
   });
 }
 
@@ -65,3 +67,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+module.exports = app;
