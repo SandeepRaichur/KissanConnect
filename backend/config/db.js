@@ -4,16 +4,18 @@ const connectDB = async () => {
   const uri = process.env.MONGO_URI;
 
   if (!uri || uri.trim() === '') {
-    console.warn('⚠️  [MongoDB Warning]: MONGO_URI is not set in environment variables.');
-    console.warn('⚠️  Database queries will fail until a valid MONGO_URI connection string is provided.');
-    return;
+    console.error('❌ [MongoDB Configuration Error]: MONGO_URI environment variable is missing.');
+    console.error('❌ Please define MONGO_URI in your environment settings (e.g. Render Dashboard -> Environment Variables).');
+    return null;
   }
 
   try {
     const conn = await mongoose.connect(uri);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    return conn;
   } catch (error) {
     console.error(`❌ MongoDB Connection Error: ${error.message}`);
+    return null;
   }
 };
 

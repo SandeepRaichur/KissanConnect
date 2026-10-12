@@ -12,10 +12,14 @@ connectDB();
 
 const app = express();
 
+const mongoose = require('mongoose');
+const fs = require('fs');
+
 // Body Parser & CORS
 app.use(express.json());
+const allowedOrigin = process.env.CLIENT_URL || '*';
 app.use(cors({
-  origin: '*',
+  origin: allowedOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -27,17 +31,21 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'ok', service: 'KissanConnect API', timestamp: new Date().toISOString() });
+  const isDbConnected = mongoose.connection.readyState === 1;
+  res.status(200).json({
+    status: 'ok',
+    service: 'KissanConnect API',
+    database: isDbConnected ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
 });
-
-const fs = require('fs');
 
 // Serve frontend if built together (e.g., monolith build), otherwise serve API status
 const frontendDist = path.join(__dirname, '../frontend/dist');
 if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
 
-  app.get('*', (req, res, next) => {
+  app.get('/{*splat}', (req, res, next) => {
     if (req.path.startsWith('/api')) {
       return next();
     }
@@ -49,8 +57,8 @@ if (fs.existsSync(frontendDist)) {
   });
 }
 
-// 404 handler for API routes
-app.use('/api/*', (req, res) => {
+// 404 handler for API routes (Express 5 named wildcard syntax)
+app.all(['/api', '/api/{*splat}'], (req, res) => {
   res.status(404).json({ message: `API route ${req.originalUrl} not found` });
 });
 
@@ -63,9 +71,10 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+const HOST = '0.0.0.0';
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`Server running on http://${HOST}:${PORT}`);
 });
 
 module.exports = app;
